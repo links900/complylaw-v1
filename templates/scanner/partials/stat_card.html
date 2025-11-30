@@ -1,0 +1,15 @@
+<!-- templates/scanner/partials/stat_card.html -->
+<div class="bg-white p-6 rounded-lg shadow text-center">
+    <p class="text-2xl font-bold text-gray-800">{{ value }}</p>
+    <p class="text-sm text-gray-600 mt-1">{{ title }}</p>
+    {% if badge %}
+        <span class="inline-block mt-2 px-3 py-1 text-xs font-semibold rounded-full
+            {% if value == 'A' %}bg-green-100 text-green-800
+            {% elif value == 'B' %}bg-blue-100 text-blue-800
+            {% elif value == 'C' %}bg-yellow-100 text-yellow-800
+            {% elif value == 'D' %}bg-orange-100 text-orange-800
+            {% else %}bg-red-100 text-red-800{% endif %}">
+            {{ value }}
+        </span>
+    {% endif %}
+</div>
