@@ -4,6 +4,41 @@ from pathlib import Path
 from dotenv import load_dotenv
 from django.urls import reverse_lazy
 
+######################
+
+import dj_database_url  # make sure this is in requirements.txt (it already is)
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# ====================== PRODUCTION OVERRIDES ======================
+# These will only be used on Render (locally your .env file will override them)
+
+SECRET_KEY = os.getenv("SECRET_KEY", "5HdSA4Tgb6nAyErusoa_K2fnaRoiazPJXMNztQcGpjU=")
+
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+
+DEBUG = os.getenv("DEBUG", "True") == "True"   # False on Render
+
+# Database – Render gives DATABASE_URL automatically
+DATABASES = {
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
+    )
+}
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_URL = "/static/"
+
+# Optional: better security on Render
+if not DEBUG:
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = "DENY"
+    CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if "." in host]
+
+
+######################
 
 load_dotenv()
 
