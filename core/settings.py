@@ -2,129 +2,47 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from django.urls import reverse_lazy
+import dj_database_url
 
-######################
+# Load .env file only in local development
+if os.getenv("RENDER") is None:
+    load_dotenv()
 
-import dj_database_url  # make sure this is in requirements.txt (it already is)
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ====================== PRODUCTION OVERRIDES ======================
-# These will only be used on Render (locally your .env file will override them)
-
+# ===================================================================
+# PRODUCTION SETTINGS – THESE WIN ON RENDER
+# ===================================================================
 SECRET_KEY = os.getenv("SECRET_KEY", "5HdSA4Tgb6nAyErusoa_K2fnaRoiazPJXMNztQcGpjU=")
-
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+DEBUG = os.getenv("DEBUG", "False") == "True"
 
-DEBUG = os.getenv("DEBUG", "True") == "True"   # False on Render
-
-# Database – Render gives DATABASE_URL automatically
+# Database – Render provides DATABASE_URL, fallback to SQLite locally
 DATABASES = {
     "default": dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
     )
 }
 
-STATIC_ROOT = BASE_DIR / "staticfiles"
+# Static files
 STATIC_URL = "/static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
-# Optional: better security on Render
+# Security settings for production
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
-    CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if "." in host]
+    CSRF_TRUSTED_ORIGINS = [f"https://{h}" for h in ALLOWED_HOSTS if "." in h]
 
-
-######################
-
-load_dotenv()
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
-DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-
-'''
-# ──────────────────────────────
-#  ALLAUTH EMAIL CONFIRMATION FIX
-# ──────────────────────────────
-'''
-# Authentication
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
-]
-
-# Site
+# ===================================================================
+# EVERYTHING ELSE (keep exactly as you had it
+# ===================================================================
 SITE_ID = 1
-
-# ================== ALLAUTH SETTINGS – FINAL WORKING VERSION ==================
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True
-
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
-ACCOUNT_CONFIRM_EMAIL_ON_GET = True
-ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
-
-# THIS LINE AUTO-LOGS IN THE USER AFTER THEY CLICK THE EMAIL LINK
-ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
-
-# THIS LINE IS ABSOLUTELY REQUIRED
-#ACCOUNT_SIGNUP_REDIRECT_URL = "account_email_confirmation_sent"
-
-# Optional but nice
-ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/accounts/login/'
-ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = '/dashboard/'
-
-LOGIN_REDIRECT_URL = '/dashboard/'
-ACCOUNT_LOGOUT_REDIRECT_URL = '/accounts/login/'
-ACCOUNT_LOGOUT_ON_GET = True
-# ==============================================================================
-# Development email (change to SMTP for production)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
-
-#BASE_URL = "https://yoursite.com"  # Change this
-
-STRIPE_SECRET_KEY = "sk_test_51SY7tNQfncpv7tThcWZBBRjNIZkwUqZJdUPaUEauzLWdhqnCQOOd742796xKN6lYlHqiYwXhH7NhliO2RaVq8sIq00GhR3sALv"
-STRIPE_WEBHOOK_SECRET = "whsec_9a1562d3d2e4700dd2132b3bea5377a2a1d628e24fba4bfb49a2de13f5fd7a1c"
-STRIPE_PRICE_PRO = "price_1SY7vdQfncpv7tThDf3ObWOB"
-STRIPE_PRICE_BASIC = "price_1SY7wyQfncpv7tThLKTDB9gR"  # optional
-
-
-
-#RATELIMIT_VIEW = 'django.views.generic.base.TemplateView'
-RATELIMIT_VIEW = 'scanner.views.rate_limit_exceeded_view'  # ← function name
-
-def rate_limit_exceeded_view(request, exception):
-    return render(request, '429.html', status=429)
-    
-RATELIMIT_VIEW_KWARGS = {
-    'template_name': '429.html',
-    'status_code': 429,
-    'content_type': 'text/html',
-}
-
-AUTHENTICATION_BACKENDS = [
-    'allauth.account.auth_backends.AuthenticationBackend',  # ← MUST BE FIRST
-    'django.contrib.auth.backends.ModelBackend',
-    # Remove or comment out your custom EmailBackend — it breaks allauth
-    # 'users.backends.EmailBackend',
-]
-
-# Add to settings.py
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
-CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-
-
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -136,18 +54,17 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.humanize',
 
-    # 3rd Party
+    # 3rd party
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'django_htmx',
     'channels',
-    'auditlog',                   # django-auditlog
-    'encrypted_model_fields',     # Field encryption
-    'django_ratelimit',           # Rate limiting
-    
+    'auditlog',
+    'encrypted_model_fields',
+    'django_ratelimit',
 
-    # Local Apps
+    # Local apps
     'users',
     'scanner',
     'reports',
@@ -189,51 +106,61 @@ TEMPLATES = [
     },
 ]
 
-# Database (SQLite for dev)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+# Authentication
+AUTHENTICATION_BACKENDS = [
+    'allauth.account.auth_backends.AuthenticationBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+AUTH_USER_MODEL = 'users.UserAccount'
 
-# Channels (Real-time)
+# Allauth settings (your working version)
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
+ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = '/dashboard/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/accounts/login/'
+ACCOUNT_LOGOUT_ON_GET = True
+
+# Email (console in dev, change later for production)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Stripe
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "sk_test_xxx")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+STRIPE_PRICE_PRO = os.getenv("STRIPE_PRICE_PRO", "")
+STRIPE_PRICE_BASIC = os.getenv("STRIPE_PRICE_BASIC", "")
+
+# Celery & Redis
+CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0")
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+
+# Channels
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {"hosts": [("127.0.0.1", 6379)]},
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [CELERY_BROKER_URL]},
     },
 }
 
-# Custom User
-AUTH_USER_MODEL = 'users.UserAccount'
-
-
-# Static & Media
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
-# Encryption Key (REQUIRED)
-FIELD_ENCRYPTION_KEY = os.getenv('FIELD_ENCRYPTION_KEY')
-if not FIELD_ENCRYPTION_KEY:
-    raise ValueError("FIELD_ENCRYPTION_KEY missing in .env")
-    
-    
-# core/settings.py (add at bottom)
-
-
+# Cache
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
+        "LOCATION": CELERY_BROKER_URL.replace("0", "1"),
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
     }
 }
 
+# Field encryption key
+FIELD_ENCRYPTION_KEY = os.getenv("FIELD_ENCRYPTION_KEY")
+if not FIELD_ENCRYPTION_KEY and not DEBUG:
+    raise ValueError("FIELD_ENCRYPTION_KEY is required in production")
 
-
+# Rate limiting view
+RATELIMIT_VIEW = 'scanner.views.rate_limit_exceeded_view'
