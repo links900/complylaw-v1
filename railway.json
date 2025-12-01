@@ -5,8 +5,8 @@
       "libpangocairo-1.0-0",
       "libgdk-pixbuf-2.0-0",
       "libcairo-gobject2",
-      "libglib2.0-0",
       "libgobject-2.0-0",
+      "libglib2.0-0",
       "libgirepository-1.0-1",
       "libxml2",
       "libxslt1.1",
@@ -14,13 +14,22 @@
       "fontconfig",
       "libfreetype6",
       "libharfbuzz0b",
-      "libfribidi0"
+      "libfribidi0",
+      "libjpeg-turbo8"
+    ],
+    "preBuildCommands": [
+      "mkdir -p /usr/lib/x86_64-linux-gnu"
     ],
     "postBuildCommands": [
-      "ln -s /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0 /usr/lib/x86_64-linux-gnu/gobject-2.0-0",
-      "ln -s /usr/lib/x86_64-linux-gnu/libpango-1.0.so.0 /usr/lib/x86_64-linux-gnu/pango-1.0-0",
-      "ln -s /usr/lib/x86_64-linux-gnu/libpangocairo-1.0.so.0 /usr/lib/x86_64-linux-gnu/pangocairo-1.0-0",
+      "ln -sf /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0 /usr/lib/x86_64-linux-gnu/gobject-2.0-0",
+      "ln -sf /usr/lib/x86_64-linux-gnu/libpango-1.0.so.0 /usr/lib/x86_64-linux-gnu/pango-1.0-0",
+      "ln -sf /usr/lib/x86_64-linux-gnu/libpangocairo-1.0.so.0 /usr/lib/x86_64-linux-gnu/pangocairo-1.0-0",
+      "ln -sf /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0 /usr/lib/x86_64-linux-gnu/glib-2.0-0",
+      "ln -sf /usr/lib/x86_64-linux-gnu/libgdk_pixbuf-2.0.so.0 /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0-0",
       "ldconfig"
     ]
+  },
+  "start": {
+    "cmd": "gunicorn core.wsgi:application --bind 0.0.0.0:$PORT"
   }
 }
