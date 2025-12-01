@@ -1,33 +1,32 @@
 {
+  "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS",
-    "nixpacksPlan": {
-      "phases": {
-        "install": {
-          "aptPackages": [
-            "libpango-1.0-0",
-            "libpangocairo-1.0-0",
-            "libgdk-pixbuf-2.0-0",
-            "libcairo2",
-            "libcairo-gobject2",
-            "libgobject-2.0-0",
-            "libglib2.0-0",
-            "libgirepository-1.0-1",
-            "libxml2",
-            "libxslt1.1",
-            "shared-mime-info",
-            "fontconfig",
-            "libfreetype6",
-            "libharfbuzz0b",
-            "libfribidi0",
-            "libjpeg-turbo8",
-            "fonts-dejavu-core"
-          ]
-        }
-      }
-    }
+    "builder": "paketobuildpacks/builder:base",
+    "buildpacks": [
+      { "uri": "heroku/python" },
+      { "uri": "paketo-community/apt" }
+    ],
+    "aptPackages": [
+      "libpango-1.0-0",
+      "libpangocairo-1.0-0",
+      "libgdk-pixbuf-2.0-0",
+      "libcairo-gobject2",
+      "libgobject-2.0-0",
+      "libglib2.0-0",
+      "libgirepository-1.0-1",
+      "shared-mime-info",
+      "fontconfig",
+      "libfreetype6",
+      "libharfbuzz0b",
+      "libfribidi0",
+      "libjpeg-turbo8"
+    ],
+    "postBuildCommands": [
+      "ln -sf /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0 /usr/lib/x86_64-linux-gnu/gobject-2.0-0",
+      "ln -sf /usr/lib/x86_64-linux-gnu/libpango-1.0.so.0 /usr/lib/x86_64-linux-gnu/pango-1.0-0",
+      "ln -sf /usr/lib/x86_64-linux-gnu/libpangocairo-1.0.so.0 /usr/lib/x86_64-linux-gnu/pangocairo-1.0-0",
+      "ldconfig"
+    ]
   },
-  "start": {
-    "cmd": "gunicorn core.wsgi:application --bind 0.0.0.0:$PORT"
-  }
+  "start": "gunicorn core.wsgi:application --bind 0.0.0.0:$PORT"
 }
