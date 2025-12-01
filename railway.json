@@ -3,17 +3,21 @@
     "aptPackages": [
       "libpango-1.0-0",
       "libpangocairo-1.0-0",
-      "libgdk-pixbuf2.0-0",
+      "libgdk-pixbuf-2.0-0",
       "libcairo2",
       "libcairo-gobject2",
       "libgirepository-1.0-1",
       "libglib2.0-0",
       "libgobject-2.0-0",
+      "libgdk-pixbuf2.0-0",
       "shared-mime-info",
-      "libjpeg62-turbo",
+      "libjpeg-turbo8",
       "libpng16-16",
       "fontconfig",
-      "libfreetype6"
+      "libfreetype6",
+      "libharfbuzz0b",
+      "libfontconfig1",
+      "libfribidi0"
     ]
   }
 }
