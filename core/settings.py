@@ -17,10 +17,16 @@ import os
 from cryptography.fernet import Fernet
 
 FIELD_ENCRYPTION_KEY = os.environ.get("FIELD_ENCRYPTION_KEY")
+
 if not FIELD_ENCRYPTION_KEY:
-    raise ValueError("FIELD_ENCRYPTION_KEY environment variable is required!")
-# Optional: validate it's a proper Fernet key (helps catch typos early)
-Fernet(FIELD_ENCRYPTION_KEY)  # will raise if invalid
+    if os.environ.get("RENDER"):  # Only crash on Render if missing
+        raise ValueError("FIELD_ENCRYPTION_KEY is required on Render!")
+else:
+    # Only validate if key exists — prevents startup crash from bad copy-paste
+    try:
+        Fernet(FIELD_ENCRYPTION_KEY)
+    except Exception as e:
+        raise ValueError(f"Invalid FIELD_ENCRYPTION_KEY: {e}")
 
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
