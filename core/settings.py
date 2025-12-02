@@ -9,8 +9,42 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+################################
+#For Local
+################################
+
+'''
 DEBUG = False
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+# Database (SQLite for dev)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+'''
+
+
+################################
+#For Server
+################################
+
+# Production settings for Render
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
+ALLOWED_HOSTS = ['*']  # or os.getenv('ALLOWED_HOSTS', '').split(',') if you set it
+
+import dj_database_url
+DATABASES = {
+    'default': dj_database_url.config(
+        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
+        conn_max_age=600
+    )
+}
+
+
+###############################
 
 '''
 # ──────────────────────────────
@@ -153,13 +187,6 @@ TEMPLATES = [
     },
 ]
 
-# Database (SQLite for dev)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
 
 # Channels (Real-time)
 CHANNEL_LAYERS = {
@@ -177,6 +204,7 @@ AUTH_USER_MODEL = 'users.UserAccount'
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
