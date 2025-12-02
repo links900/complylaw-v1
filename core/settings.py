@@ -167,6 +167,7 @@ MIDDLEWARE = [
     'django_htmx.middleware.HtmxMiddleware',
     'auditlog.middleware.AuditlogMiddleware',
     'django_ratelimit.middleware.RatelimitMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
