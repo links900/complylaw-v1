@@ -32,10 +32,16 @@ DATABASES = {
 ################################
 
 # Production settings for Render
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = ['*']  # or os.getenv('ALLOWED_HOSTS', '').split(',') if you set it
 
 import dj_database_url
+if os.getenv('RENDER'):
+    ALLOWED_HOSTS = ['*']
+    DEBUG = False
+    #SECURE_SSL_REDIRECT = False  # Render handles SSL for you
+    #SESSION_COOKIE_SECURE = False
+    #CSRF_COOKIE_SECURE = False
+
+
 DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
