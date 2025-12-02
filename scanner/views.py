@@ -95,17 +95,17 @@ class StartScanView(LoginRequiredMixin, View):
             status='PENDING',
             scan_id=str(uuid.uuid4())[:8]
         )
-        print(scan.id)
-        print(scan.status)
+        #print(scan.id)
+        #print(scan.status)
 
         
         run_compliance_scan.delay(scan.pk)
         messages.success(request, f"Scan started for <strong>{domain}</strong>.")
         
         if request.htmx:
-            print("here in htmx")
+            #print("here in htmx")
             return HttpResponseLocation(reverse('scanner:scan_status', args=[scan.id]))
-        print("here after htmx check")
+        #print("here after htmx check")
         return redirect('scanner:dashboard')
 
 
@@ -114,9 +114,9 @@ class ScanStatusView(LoginRequiredMixin, DetailView):
     model = ScanResult
     template_name = 'scanner/scan_status.html'
     context_object_name = 'scan'
-    print("1>>>>")
-    print(model.id)
-    print(model)
+    #print("1>>>>")
+    #print(model.id)
+    #print(model)
 
     def get_queryset(self):
         return ScanResult.objects.filter(firm=self.request.user.firm)
@@ -127,9 +127,9 @@ class ScanStatusView(LoginRequiredMixin, DetailView):
 # === HTMX PARTIAL: Progress Update ===
 def scan_status_partial(request, pk):
     scan = get_object_or_404(ScanResult, pk=pk, firm=request.user.firm)
-    print("2>>>>")
-    print(scan.id)
-    print(scan)
+    #print("2>>>>")
+    #print(scan.id)
+    #print(scan)
     #return render(request, 'scanner/partials/scan_progress.html', {'scan': scan})
     
     

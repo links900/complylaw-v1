@@ -500,7 +500,7 @@ def run_compliance_scan(self, scan_id):
         return "Scan not found"
 
     domain = scan.domain.strip().lower().replace("https://", "").replace("http://", "").split("/")[0]
-    print("RUNNING COMPLIANCE SCAN FOR:", domain)
+    #print("RUNNING COMPLIANCE SCAN FOR:", domain)
 
     #INIT
     scan.status = 'RUNNING'
@@ -618,8 +618,8 @@ def run_compliance_scan(self, scan_id):
         scan.progress = progress
         scan.save(update_fields=['current_step', 'progress', 'scan_log'])
 
-        # Optional: print to console for debugging
-        print(log_line)
+        # Optional: #print to console for debugging
+        #print(log_line)
 
         # === WEBSOCKET UPDATE ===
         try:
@@ -634,7 +634,7 @@ def run_compliance_scan(self, scan_id):
             )
             time.sleep(0.28)
         except Exception as e:
-            print(f"WebSocket send failed (ignored): {e}")
+            #print(f"WebSocket send failed (ignored): {e}")
 
     # ===================================================================
     # FINALIZE (LOCAL MODE ONLY)
