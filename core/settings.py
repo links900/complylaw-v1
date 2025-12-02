@@ -3,52 +3,48 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from django.urls import reverse_lazy
+import dj_database_url
 
-
-load_dotenv()
+# Load .env only locally
+if not os.getenv('RENDER'):
+    load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+###############################
 
-################################
-#For Local
-################################
-
-'''
-DEBUG = False
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-# Database (SQLite for dev)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-'''
-
-
-################################
-#For Server
-################################
-
-# Production settings for Render
-
-import dj_database_url
+# ==================== PRODUCTION SETTINGS (RENDER) ====================
 if os.getenv('RENDER'):
-    ALLOWED_HOSTS = ['*']
     DEBUG = False
-    #SECURE_SSL_REDIRECT = False  # Render handles SSL for you
-    #SESSION_COOKIE_SECURE = False
-    #CSRF_COOKIE_SECURE = False
+    ALLOWED_HOSTS = ['*']
+else:
+    DEBUG = True
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-
+# Database – works both locally and on Render
 DATABASES = {
     'default': dj_database_url.config(
-        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
         conn_max_age=600
     )
 }
 
+# ======================= FIELD ENCRYPTION KEY =======================
+FIELD_ENCRYPTION_KEY = os.getenv('FIELD_ENCRYPTION_KEY')
+
+# On Render → crash immediately if missing or invalid
+if os.getenv('RENDER'):
+    if not FIELD_ENCRYPTION_KEY:
+        raise ValueError("FIELD_ENCRYPTION_KEY is missing in Render Environment Variables!")
+    try:
+        from cryptography.fernet import Fernet
+        Fernet(FIELD_ENCRYPTION_KEY)          # validates format instantly
+    except Exception as e:
+        raise ValueError(f"Invalid FIELD_ENCRYPTION_KEY → {e}")
+
+# Locally → just warn if missing (so you can still run dev server)
+elif not FIELD_ENCRYPTION_KEY:
+    print("WARNING: FIELD_ENCRYPTION_KEY not found – using unencrypted fields locally")
 
 ###############################
 
@@ -214,10 +210,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Encryption Key (REQUIRED)
-FIELD_ENCRYPTION_KEY = os.getenv('FIELD_ENCRYPTION_KEY')
-if not FIELD_ENCRYPTION_KEY:
-    raise ValueError("FIELD_ENCRYPTION_KEY missing in .env")
+
     
     
 # core/settings.py (add at bottom)
