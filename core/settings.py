@@ -13,7 +13,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ===================================================================
 # PRODUCTION SETTINGS – THESE WIN ON RENDER
 # ===================================================================
-SECRET_KEY = os.getenv("SECRET_KEY", "5HdSA4Tgb6nAyErusoa_K2fnaRoiazPJXMNztQcGpjU=")
+import os
+from cryptography.fernet import Fernet
+
+FIELD_ENCRYPTION_KEY = os.environ.get("FIELD_ENCRYPTION_KEY")
+if not FIELD_ENCRYPTION_KEY:
+    raise ValueError("FIELD_ENCRYPTION_KEY environment variable is required!")
+# Optional: validate it's a proper Fernet key (helps catch typos early)
+Fernet(FIELD_ENCRYPTION_KEY)  # will raise if invalid
+
+
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
