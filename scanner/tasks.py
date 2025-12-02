@@ -634,7 +634,7 @@ def run_compliance_scan(self, scan_id):
             )
             time.sleep(0.28)
         except Exception as e:
-            #print(f"WebSocket send failed (ignored): {e}")
+            print(f"WebSocket send failed (ignored): {e}")
 
     # ===================================================================
     # FINALIZE (LOCAL MODE ONLY)
