@@ -4,7 +4,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from django.urls import reverse_lazy
 import dj_database_url
-
+import sys
 
 print("DEBUG SETTINGS LOADED", file=sys.stderr)
 print("FIELD_ENCRYPTION_KEY:", FIELD_ENCRYPTION_KEY, file=sys.stderr)
