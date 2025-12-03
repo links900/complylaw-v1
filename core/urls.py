@@ -30,7 +30,7 @@ urlpatterns = [
     # PRICING FIRST — MUST BE BEFORE ANY CATCH-ALL
     
     path('pricing/', include('billing.urls', namespace='billing')),  # ← THIS LINE FIRST
-    path('billing/', include('billing.urls', namespace='billing')),
+    #path('billing/', include('billing.urls', namespace='billing')),
     
     
     # YOUR PROFILE PAGE — THIS WAS MISSING!
@@ -41,10 +41,10 @@ urlpatterns = [
 
     # Dashboard app handles /dashboard/ AND also serves as fallback at root for logged-in users
     path('dashboard/', include('dashboard.urls', namespace='dashboard')),
-    path('', include('dashboard.urls')),  # This keeps your old behavior (optional, safe to keep)
+    #path('', include('dashboard.urls')),  # This keeps your old behavior (optional, safe to keep)
     
     
-    path('users/', include('users.urls')),
+    #path('users/', include('users.urls')),
     path('scanner/', include('scanner.urls')),
     path('reports/', include('reports.urls')),
     

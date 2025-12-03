@@ -3,20 +3,19 @@ import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
-from django.urls import reverse_lazy
 import dj_database_url
 
-# ──────────────────────────────
-# LOAD .env LOCALLY
-# ──────────────────────────────
+# ========================= DEBUG PRINT =========================
+print("DEBUG SETTINGS LOADED", file=sys.stderr)
+
+# ========================= LOAD ENV =========================
+# Load .env locally only
 if not os.getenv('RENDER'):
     load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ──────────────────────────────
-# DEBUG & ALLOWED HOSTS
-# ──────────────────────────────
+# ========================= DEBUG / ALLOWED HOSTS =========================
 if os.getenv('RENDER'):
     DEBUG = False
     ALLOWED_HOSTS = ['*']
@@ -24,9 +23,7 @@ else:
     DEBUG = True
     ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-# ──────────────────────────────
-# DATABASE (SQLite locally, Postgres on Render)
-# ──────────────────────────────
+# ========================= DATABASE =========================
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
@@ -34,31 +31,25 @@ DATABASES = {
     )
 }
 
-# ──────────────────────────────
-# FIELD ENCRYPTION KEY
-# ──────────────────────────────
+# ========================= FIELD ENCRYPTION KEY =========================
 FIELD_ENCRYPTION_KEY = os.getenv('FIELD_ENCRYPTION_KEY')
+print("FIELD_ENCRYPTION_KEY:", FIELD_ENCRYPTION_KEY, file=sys.stderr)
 
 if os.getenv('RENDER'):
     if not FIELD_ENCRYPTION_KEY:
         raise ValueError("FIELD_ENCRYPTION_KEY is missing in Render Environment Variables!")
-    from cryptography.fernet import Fernet
     try:
-        Fernet(FIELD_ENCRYPTION_KEY)  # validate format
+        from cryptography.fernet import Fernet
+        Fernet(FIELD_ENCRYPTION_KEY)  # validate
     except Exception as e:
         raise ValueError(f"Invalid FIELD_ENCRYPTION_KEY → {e}")
 else:
     if not FIELD_ENCRYPTION_KEY:
         print("WARNING: FIELD_ENCRYPTION_KEY not found – using unencrypted fields locally")
 
-print("DEBUG SETTINGS LOADED", file=sys.stderr)
-print("FIELD_ENCRYPTION_KEY:", FIELD_ENCRYPTION_KEY, file=sys.stderr)
-
-# ──────────────────────────────
-# AUTHENTICATION & ALLAUTH
-# ──────────────────────────────
+# ========================= ALLAUTH =========================
 AUTHENTICATION_BACKENDS = [
-    'allauth.account.auth_backends.AuthenticationBackend',  # MUST BE FIRST
+    'allauth.account.auth_backends.AuthenticationBackend',  # MUST be first
     'django.contrib.auth.backends.ModelBackend',
 ]
 
@@ -81,64 +72,23 @@ ACCOUNT_LOGOUT_ON_GET = True
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # dev only
 
-# ──────────────────────────────
-# STRIPE SETTINGS
-# ──────────────────────────────
-STRIPE_SECRET_KEY = "sk_test_51SY7tNQfncpv7tThcWZBBRjNIZkwUqZJdUPaUEauzLWdhqnCQOOd742796xKN6lYlHqiYwXhH7NhliO2RaVq8sIq00GhR3sALv"
-STRIPE_WEBHOOK_SECRET = "whsec_9a1562d3d2e4700dd2132b3bea5377a2a1d628e24fba4bfb49a2de13f5fd7a1c"
-STRIPE_PRICE_PRO = "price_1SY7vdQfncpv7tThDf3ObWOB"
-STRIPE_PRICE_BASIC = "price_1SY7wyQfncpv7tThLKTDB9gR"
+# ========================= STRIPE (example placeholders) =========================
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', 'sk_test_...')
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', 'whsec_...')
+STRIPE_PRICE_PRO = os.getenv('STRIPE_PRICE_PRO', 'price_...')
+STRIPE_PRICE_BASIC = os.getenv('STRIPE_PRICE_BASIC', 'price_...')
 
-# ──────────────────────────────
-# RATE LIMIT SETTINGS
-# ──────────────────────────────
+# ========================= RATE LIMIT =========================
 RATELIMIT_VIEW = 'scanner.views.rate_limit_exceeded_view'
-
-def rate_limit_exceeded_view(request, exception):
-    from django.shortcuts import render
-    return render(request, '429.html', status=429)
-
 RATELIMIT_VIEW_KWARGS = {
     'template_name': '429.html',
     'status_code': 429,
     'content_type': 'text/html',
 }
 
-# ──────────────────────────────
-# CELERY, CHANNELS, CACHES
-# ──────────────────────────────
-if os.getenv('RENDER'):
-    # Fallbacks for Render: no local Redis
-    CELERY_BROKER_URL = None
-    CELERY_RESULT_BACKEND = None
-    CHANNEL_LAYERS = {}
-    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
-else:
-    # Local dev Redis
-    CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
-    CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
-    CELERY_ACCEPT_CONTENT = ['json']
-    CELERY_TASK_SERIALIZER = 'json'
-
-    CHANNEL_LAYERS = {
-        'default': {
-            'BACKEND': 'channels_redis.core.RedisChannelLayer',
-            'CONFIG': {"hosts": [("127.0.0.1", 6379)]},
-        },
-    }
-
-    CACHES = {
-        "default": {
-            "BACKEND": "django_redis.cache.RedisCache",
-            "LOCATION": "redis://127.0.0.1:6379/1",
-            "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"}
-        }
-    }
-
-# ──────────────────────────────
-# INSTALLED APPS
-# ──────────────────────────────
+# ========================= INSTALLED APPS =========================
 INSTALLED_APPS = [
+    # Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -148,7 +98,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.humanize',
 
-    # 3rd Party
+    # Third-party
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -166,9 +116,7 @@ INSTALLED_APPS = [
     'billing',
 ]
 
-# ──────────────────────────────
-# MIDDLEWARE
-# ──────────────────────────────
+# ========================= MIDDLEWARE =========================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -188,9 +136,7 @@ ROOT_URLCONF = 'core.urls'
 WSGI_APPLICATION = 'core.wsgi.application'
 ASGI_APPLICATION = 'core.asgi.application'
 
-# ──────────────────────────────
-# TEMPLATES
-# ──────────────────────────────
+# ========================= TEMPLATES =========================
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -207,17 +153,49 @@ TEMPLATES = [
     },
 ]
 
-# ──────────────────────────────
-# CUSTOM USER
-# ──────────────────────────────
+# ========================= CHANNELS =========================
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {"hosts": [("127.0.0.1", 6379)]},
+    },
+}
+
+# ========================= AUTH USER =========================
 AUTH_USER_MODEL = 'users.UserAccount'
 
-# ──────────────────────────────
-# STATIC & MEDIA
-# ──────────────────────────────
+# ========================= STATIC & MEDIA =========================
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# ========================= CACHES (for django-ratelimit) =========================
+if os.getenv('RENDER'):
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": "redis://127.0.0.1:6379/1",
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            }
+        }
+    }
+else:
+    # local fallback
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+
+# ========================= CELERY =========================
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://127.0.0.1:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+# ========================= DEFAULT AUTO FIELD =========================
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
