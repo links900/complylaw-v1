@@ -1,23 +1,22 @@
 # core/settings.py
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 from django.urls import reverse_lazy
 import dj_database_url
-import sys
 
-print("DEBUG SETTINGS LOADED", file=sys.stderr)
-print("FIELD_ENCRYPTION_KEY:", FIELD_ENCRYPTION_KEY, file=sys.stderr)
-
-# Load .env only locally
+# ──────────────────────────────
+# LOAD .env LOCALLY
+# ──────────────────────────────
 if not os.getenv('RENDER'):
     load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-###############################
-
-# ==================== PRODUCTION SETTINGS (RENDER) ====================
+# ──────────────────────────────
+# DEBUG & ALLOWED HOSTS
+# ──────────────────────────────
 if os.getenv('RENDER'):
     DEBUG = False
     ALLOWED_HOSTS = ['*']
@@ -25,7 +24,9 @@ else:
     DEBUG = True
     ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-# Database – works both locally and on Render
+# ──────────────────────────────
+# DATABASE (SQLite locally, Postgres on Render)
+# ──────────────────────────────
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
@@ -33,103 +34,110 @@ DATABASES = {
     )
 }
 
-# ======================= FIELD ENCRYPTION KEY =======================
+# ──────────────────────────────
+# FIELD ENCRYPTION KEY
+# ──────────────────────────────
 FIELD_ENCRYPTION_KEY = os.getenv('FIELD_ENCRYPTION_KEY')
 
-# On Render → crash immediately if missing or invalid
 if os.getenv('RENDER'):
     if not FIELD_ENCRYPTION_KEY:
         raise ValueError("FIELD_ENCRYPTION_KEY is missing in Render Environment Variables!")
+    from cryptography.fernet import Fernet
     try:
-        from cryptography.fernet import Fernet
-        Fernet(FIELD_ENCRYPTION_KEY)          # validates format instantly
+        Fernet(FIELD_ENCRYPTION_KEY)  # validate format
     except Exception as e:
         raise ValueError(f"Invalid FIELD_ENCRYPTION_KEY → {e}")
+else:
+    if not FIELD_ENCRYPTION_KEY:
+        print("WARNING: FIELD_ENCRYPTION_KEY not found – using unencrypted fields locally")
 
-# Locally → just warn if missing (so you can still run dev server)
-elif not FIELD_ENCRYPTION_KEY:
-    print("WARNING: FIELD_ENCRYPTION_KEY not found – using unencrypted fields locally")
+print("DEBUG SETTINGS LOADED", file=sys.stderr)
+print("FIELD_ENCRYPTION_KEY:", FIELD_ENCRYPTION_KEY, file=sys.stderr)
 
-###############################
-
-'''
 # ──────────────────────────────
-#  ALLAUTH EMAIL CONFIRMATION FIX
+# AUTHENTICATION & ALLAUTH
 # ──────────────────────────────
-'''
-# Authentication
 AUTHENTICATION_BACKENDS = [
+    'allauth.account.auth_backends.AuthenticationBackend',  # MUST BE FIRST
     'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-# Site
 SITE_ID = 1
 
-# ================== ALLAUTH SETTINGS – FINAL WORKING VERSION ==================
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True
-
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
-
-# THIS LINE AUTO-LOGS IN THE USER AFTER THEY CLICK THE EMAIL LINK
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
-
-# THIS LINE IS ABSOLUTELY REQUIRED
-#ACCOUNT_SIGNUP_REDIRECT_URL = "account_email_confirmation_sent"
-
-# Optional but nice
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/accounts/login/'
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = '/dashboard/'
 
 LOGIN_REDIRECT_URL = '/dashboard/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/accounts/login/'
 ACCOUNT_LOGOUT_ON_GET = True
-# ==============================================================================
-# Development email (change to SMTP for production)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # dev only
 
-#BASE_URL = "https://yoursite.com"  # Change this
-
+# ──────────────────────────────
+# STRIPE SETTINGS
+# ──────────────────────────────
 STRIPE_SECRET_KEY = "sk_test_51SY7tNQfncpv7tThcWZBBRjNIZkwUqZJdUPaUEauzLWdhqnCQOOd742796xKN6lYlHqiYwXhH7NhliO2RaVq8sIq00GhR3sALv"
 STRIPE_WEBHOOK_SECRET = "whsec_9a1562d3d2e4700dd2132b3bea5377a2a1d628e24fba4bfb49a2de13f5fd7a1c"
 STRIPE_PRICE_PRO = "price_1SY7vdQfncpv7tThDf3ObWOB"
-STRIPE_PRICE_BASIC = "price_1SY7wyQfncpv7tThLKTDB9gR"  # optional
+STRIPE_PRICE_BASIC = "price_1SY7wyQfncpv7tThLKTDB9gR"
 
-
-
-#RATELIMIT_VIEW = 'django.views.generic.base.TemplateView'
-RATELIMIT_VIEW = 'scanner.views.rate_limit_exceeded_view'  # ← function name
+# ──────────────────────────────
+# RATE LIMIT SETTINGS
+# ──────────────────────────────
+RATELIMIT_VIEW = 'scanner.views.rate_limit_exceeded_view'
 
 def rate_limit_exceeded_view(request, exception):
+    from django.shortcuts import render
     return render(request, '429.html', status=429)
-    
+
 RATELIMIT_VIEW_KWARGS = {
     'template_name': '429.html',
     'status_code': 429,
     'content_type': 'text/html',
 }
 
-AUTHENTICATION_BACKENDS = [
-    'allauth.account.auth_backends.AuthenticationBackend',  # ← MUST BE FIRST
-    'django.contrib.auth.backends.ModelBackend',
-    # Remove or comment out your custom EmailBackend — it breaks allauth
-    # 'users.backends.EmailBackend',
-]
+# ──────────────────────────────
+# CELERY, CHANNELS, CACHES
+# ──────────────────────────────
+if os.getenv('RENDER'):
+    # Fallbacks for Render: no local Redis
+    CELERY_BROKER_URL = None
+    CELERY_RESULT_BACKEND = None
+    CHANNEL_LAYERS = {}
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+else:
+    # Local dev Redis
+    CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+    CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+    CELERY_ACCEPT_CONTENT = ['json']
+    CELERY_TASK_SERIALIZER = 'json'
 
-# Add to settings.py
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
-CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {"hosts": [("127.0.0.1", 6379)]},
+        },
+    }
 
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": "redis://127.0.0.1:6379/1",
+            "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"}
+        }
+    }
 
-
+# ──────────────────────────────
+# INSTALLED APPS
+# ──────────────────────────────
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -146,12 +154,11 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'django_htmx',
     'channels',
-    'auditlog',                   # django-auditlog
-    'encrypted_model_fields',     # Field encryption
-    'django_ratelimit',           # Rate limiting
-    
+    'auditlog',
+    'encrypted_model_fields',
+    'django_ratelimit',
 
-    # Local Apps
+    # Local
     'users',
     'scanner',
     'reports',
@@ -159,6 +166,9 @@ INSTALLED_APPS = [
     'billing',
 ]
 
+# ──────────────────────────────
+# MIDDLEWARE
+# ──────────────────────────────
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -172,13 +182,15 @@ MIDDLEWARE = [
     'django_htmx.middleware.HtmxMiddleware',
     'auditlog.middleware.AuditlogMiddleware',
     'django_ratelimit.middleware.RatelimitMiddleware',
-    
 ]
 
 ROOT_URLCONF = 'core.urls'
 WSGI_APPLICATION = 'core.wsgi.application'
 ASGI_APPLICATION = 'core.asgi.application'
 
+# ──────────────────────────────
+# TEMPLATES
+# ──────────────────────────────
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -195,42 +207,17 @@ TEMPLATES = [
     },
 ]
 
-
-# Channels (Real-time)
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {"hosts": [("127.0.0.1", 6379)]},
-    },
-}
-
-# Custom User
+# ──────────────────────────────
+# CUSTOM USER
+# ──────────────────────────────
 AUTH_USER_MODEL = 'users.UserAccount'
 
-
-# Static & Media
+# ──────────────────────────────
+# STATIC & MEDIA
+# ──────────────────────────────
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
-
-    
-    
-# core/settings.py (add at bottom)
-
-
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}
-
-
-
