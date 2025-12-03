@@ -7,6 +7,7 @@ import dj_database_url
 
 # ========================= DEBUG PRINT =========================
 print("DEBUG SETTINGS LOADED", file=sys.stderr)
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "fallback_dev_secret_key")
 
 # ========================= LOAD ENV =========================
 # Load .env locally only
