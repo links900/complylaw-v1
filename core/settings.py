@@ -158,6 +158,17 @@ TEMPLATES = [
 # ========================= CHANNELS =========================
 REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379")
 
+if os.getenv('RENDER'):
+    import redis
+    try:
+        r = redis.from_url(REDIS_URL)
+        r.ping()
+        print("✅ Redis connection successful", file=sys.stderr)
+    except Exception as e:
+        raise ValueError(f"Redis connection failed: {e}")
+        
+        
+        
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
