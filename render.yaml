@@ -26,17 +26,22 @@ services:
     buildCommand: ./render-build.sh
     startCommand: celery -A core worker -l info
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.7
       - key: REDIS_URL
         fromService:
           name: complylaw-redis
+          property: connectionString
+      - key: DATABASE_URL
+        fromDatabase:
+          name: complylaw-db
           property: connectionString
 
 databases:
   - name: complylaw-db
     plan: free
 
-services:
-  - type: redis
-    name: complylaw-redis
-    ipAllowList: []
+redis:
+  - name: complylaw-redis
     plan: free
+    ipAllowList: []
