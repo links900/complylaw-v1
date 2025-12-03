@@ -17,7 +17,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ========================= DEBUG / ALLOWED HOSTS =========================
 if os.getenv('RENDER'):
-    DEBUG = False
+    #DEBUG = False
+    DEBUG = os.getenv("DEBUG", "False") == "True"
     ALLOWED_HOSTS = ['*']
 else:
     DEBUG = True
@@ -203,7 +204,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 
-# ========================= LOGGING in log FILE =========================
+# ========================= LOGGING in debug.log FILE =========================
 
 LOGGING = {
     'version': 1,
