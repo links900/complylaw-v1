@@ -5,6 +5,10 @@ from dotenv import load_dotenv
 from django.urls import reverse_lazy
 import dj_database_url
 
+
+print("DEBUG SETTINGS LOADED", file=sys.stderr)
+print("FIELD_ENCRYPTION_KEY:", FIELD_ENCRYPTION_KEY, file=sys.stderr)
+
 # Load .env only locally
 if not os.getenv('RENDER'):
     load_dotenv()
