@@ -244,17 +244,10 @@ def rate_limit_exceeded_view(request, exception=None):
     )
     
     
-# === CUSTOM 429 HANDLER (Beautiful page + HTMX friendly) ===
 from django.http import HttpResponseTooManyRequests
 from django.template.response import TemplateResponse
 
-
-def rate_limit_exceeded_view(request, exception=None):
-    """
-    This function is used by django-ratelimit when block=True and a custom handler is set.
-    It also works perfectly when called manually.
-    """
-    response = TemplateResponse(request, "429.html", status=429)
-    # Optional: Add Retry-After header (good practice)
-    response["Retry-After"] = "60"  # 60 seconds
-    return response
+def my_view(request):
+    if some_rate_limit_exceeded:
+        return TemplateResponse(request, "429.html", status=429)
+        # or: return HttpResponseTooManyRequests("Rate limit exceeded")
