@@ -20,10 +20,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 if os.getenv('RENDER'):
     #DEBUG = False
     DEBUG = os.getenv("DEBUG", "False") == "True"
-    ALLOWED_HOSTS = ['*']
+   
+    ALLOWED_HOSTS = ['complylaw-v1.onrender.com', '.onrender.com']
+
+    CSRF_TRUSTED_ORIGINS = [
+        'https://complylaw-v1.onrender.com',
+        'https://*.onrender.com',   # covers future services like complylaw-v2, etc.
+    ]
+
+    # Optional but recommended in production
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000      # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 else:
     DEBUG = True
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+    CSRF_TRUSTED_ORIGINS = [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+    ]
 
 # ========================= DATABASE =========================
 DATABASES = {
