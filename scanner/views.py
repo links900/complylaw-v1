@@ -242,12 +242,3 @@ def rate_limit_exceeded_view(request, exception=None):
         "You have exceeded the request limit. Please try again later.",
         status=429
     )
-    
-    
-from django.http import HttpResponseTooManyRequests
-from django.template.response import TemplateResponse
-
-def my_view(request):
-    if some_rate_limit_exceeded:
-        return TemplateResponse(request, "429.html", status=429)
-        # or: return HttpResponseTooManyRequests("Rate limit exceeded")
