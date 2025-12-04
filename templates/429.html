@@ -13,28 +13,28 @@
 </div>
 {% endblock %}
 
+{% block scripts %}
 <script>
 document.body.addEventListener('htmx:afterOnLoad', function(evt) {
     if (evt.detail.xhr.status === 429) {
         const msg = "Too many scans. Please wait 1 hour.";
-        // Show message inside modal
+
         const rateLimitDiv = document.getElementById('rate-limit-msg');
         if (rateLimitDiv) {
             rateLimitDiv.innerHTML = `<span class="text-red-600">${msg}</span>`;
         }
 
-        // Show toast
         const toast = document.createElement('div');
         toast.innerText = msg;
         toast.className = 'fixed bottom-4 right-4 px-6 py-3 bg-red-600 text-white rounded-lg shadow-lg z-50';
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 4000);
 
-        // Close modal after showing toast (optional delay)
         setTimeout(() => {
             const modal = document.getElementById('scanModal');
             if (modal) modal.remove();
-        }, 500); // 0.5s delay so user sees the message inside modal
+        }, 500);
     }
 });
 </script>
+{% endblock %}
