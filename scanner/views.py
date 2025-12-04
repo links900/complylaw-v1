@@ -67,7 +67,6 @@ class RunScanModalView(LoginRequiredMixin, TemplateView):
 
 
 # === START SCAN (WITH RATE LIMIT) ===
-'''
 @method_decorator(ratelimit(key='user', rate='30/h', method='POST', block=True), name='dispatch')
 class StartScanView(LoginRequiredMixin, View):
     
@@ -108,63 +107,7 @@ class StartScanView(LoginRequiredMixin, View):
             return HttpResponseLocation(reverse('scanner:scan_status', args=[scan.id]))
         #print("here after htmx check")
         return redirect('scanner:dashboard')
-'''
 
-
-from django_ratelimit.exceptions import Ratelimited
-from django.http import HttpResponseTooManyRequests
-
-@method_decorator(
-    ratelimit(key='user', rate='30/h', method='POST', block=False),  # ← changed to block=False
-    name='dispatch'
-)
-class StartScanView(LoginRequiredMixin, View):
-   
-    def post(self, request):
-        # Check if rate limited (django-ratelimit sets this attribute)
-        if getattr(request, 'limited', False):
-            # This will now show your beautiful 429.html
-            return rate_limit_exceeded_view(request)
-
-        domain = request.POST.get('domain', '').strip().lower()
-        if not domain:
-            messages.error(request, "Please enter a domain.")
-            return redirect('scanner:run_scan')
-
-        if not re.match(r'^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$', domain):
-            messages.error(request, "Invalid domain format.")
-            return redirect('scanner:run_scan')
-
-        if ScanResult.objects.filter(
-            firm=request.user.firm,
-            domain=domain,
-            status__in=['PENDING', 'RUNNING']
-        ).exists():
-            messages.warning(request, f"A scan for {domain} is already in progress.")
-            return redirect('scanner:dashboard')
-       
-        scan = ScanResult.objects.create(
-            firm=request.user.firm,
-            domain=domain,
-            status='PENDING',
-            scan_id=str(uuid.uuid4())[:8]
-        )
-       
-        run_compliance_scan.delay(scan.pk)
-        messages.success(request, f"Scan started for <strong>{domain}</strong>.")
-       
-        if request.htmx:
-            return HttpResponseLocation(reverse('scanner:scan_status', args=[scan.id]))
-       
-        return redirect('scanner:dashboard')
-
-    # ─── This catches the Ratelimited exception if you prefer block=True ───
-    def dispatch(self, request, *args, **kwargs):
-        try:
-            return super().dispatch(request, *args, **kwargs)
-        except Ratelimited:
-            return rate_limit_exceeded_view(request)
-            
 
 # === SCAN STATUS (Real-Time via HTMX) ===
 class ScanStatusView(LoginRequiredMixin, DetailView):
